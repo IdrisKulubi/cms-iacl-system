@@ -1,9 +1,19 @@
-import {  signIn, signOut } from "@/auth";
+"use server";
 
-export const SignInWithGoogle = async () => {
-  await signIn("google");
-};
+import { signIn, signOut } from "@/auth";
 
-export const SignOut = async () => {
-  await signOut();
-};
+export async function SignInWithGoogle() {
+  try {
+    await signIn("google", { redirectTo: "/dashboard" });
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function SignOut() {
+  try {
+    await signOut({ redirectTo: "/" });
+  } catch (error) {
+    throw error;
+  }
+}

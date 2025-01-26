@@ -3,6 +3,8 @@ import { Button } from "@/src/components/ui/button";
 import { SignInWithGoogle } from "@/lib/actions/user.actions";
 import { useFormStatus } from "react-dom";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
+import { theme } from "@/styles/theme";
 
 export default function GoogleSignUpForm() {
   const SignUpButton = () => {
@@ -10,7 +12,14 @@ export default function GoogleSignUpForm() {
     return (
       <Button
         disabled={pending}
-        className="w-full flex items-center justify-center gap-2 h-12 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200"
+        className={cn(
+          "w-full flex items-center justify-center gap-2 h-12",
+          theme.background.secondary,
+          theme.hover.bg,
+          theme.text.primary,
+          theme.border.primary,
+          "disabled:opacity-50 disabled:cursor-not-allowed"
+        )}
         variant="outline"
         aria-label="sign up with google"
       >
@@ -22,10 +31,13 @@ export default function GoogleSignUpForm() {
             height={20}
           />
         )}
-        {pending ? "Redirecting..." : "Continue with Google"}
+        <span className={cn(theme.text.primary)}>
+          {pending ? "Redirecting..." : "Continue with Google"}
+        </span>
       </Button>
     );
   };
+
   return (
     <form action={SignInWithGoogle}>
       <SignUpButton />

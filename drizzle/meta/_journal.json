@@ -8,6 +8,34 @@
       "when": 1737849754920,
       "tag": "0000_rare_gorilla_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1738586732615,
+      "tag": "0001_oval_the_call",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1738586831553,
+      "tag": "0002_fuzzy_greymalkin",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1738586926161,
+      "tag": "0003_steep_gorgon",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1738587190776,
+      "tag": "0004_glamorous_vulture",
+      "breakpoints": true
     }
   ]
 }

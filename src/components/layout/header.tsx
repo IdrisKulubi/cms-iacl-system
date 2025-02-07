@@ -3,7 +3,6 @@
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { auth } from "@/auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +19,7 @@ export function Header() {
       <div className="container flex h-14 items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href="/" className="font-bold">
-            IACL System
+            IACL People
           </Link>
         </div>
 

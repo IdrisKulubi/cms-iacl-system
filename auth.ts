@@ -20,12 +20,11 @@ export const config = {
   adapter: DrizzleAdapter(db),
   providers: [
     Google({
-      allowDangerousEmailAccountLinking: true,
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       authorization: {
         params: {
           prompt: "select_account",
-          access_type: "offline",
-          response_type: "code",
         },
       },
     }),
@@ -96,8 +95,10 @@ export const config = {
       return token;
     },
     session: async ({ session, token }: any) => {
-      session.user.id = token.sub;
-      session.user.role = token.role;
+      if (session.user) {
+        session.user.id = token.sub!;
+        session.user.role = token.role as string;
+      }
       return session;
     },
     authorized({ request, auth }: any) {

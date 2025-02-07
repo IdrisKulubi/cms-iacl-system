@@ -10,6 +10,7 @@ import {
   json,
   decimal,
   PgTable,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 
 // USERS
@@ -29,8 +30,8 @@ export const users = pgTable(
     updatedAt: timestamp("updatedAt").defaultNow(),
   },
   (table) => ({
-    emailIdx: uniqueIndex("user_email_idx").on(table.email),
-    employeeIdIdx: uniqueIndex("employee_id_idx").on(table.employeeId),
+    emailIdx: uniqueIndex("users_email_idx").on(table.email),
+    employeeIdIdx: uniqueIndex("users_employeeId_idx").on(table.employeeId),
   })
 );
 
@@ -148,3 +149,55 @@ export const departmentsRelations = pgTable("departments_relations", {
     () => departments.id
   ),
 }) satisfies PgTable;
+
+// NextAuth Required Tables with custom table names
+export const accounts = pgTable(
+  "accounts",
+  {
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id),
+    type: text("type").$type<"oauth" | "email" | "credentials">().notNull(),
+    provider: text("provider").notNull(),
+    providerAccountId: text("providerAccountId").notNull(),
+    refresh_token: text("refresh_token"),
+    access_token: text("access_token"),
+    expires_at: integer("expires_at"),
+    token_type: text("token_type"),
+    scope: text("scope"),
+    id_token: text("id_token"),
+    session_state: text("session_state"),
+  },
+  (account) => ({
+    compoundKey: primaryKey({
+      columns: [account.provider, account.providerAccountId],
+    }),
+    userIdIdx: uniqueIndex("accounts_userId_idx").on(account.userId),
+  })
+);
+
+export const sessions = pgTable(
+  "sessions",
+  {
+    sessionToken: text("sessionToken").notNull().primaryKey(),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
+  },
+  (session) => ({
+    userIdIdx: uniqueIndex("sessions_userId_idx").on(session.userId),
+  })
+);
+
+export const verificationTokens = pgTable(
+  "verification_tokens",
+  {
+    identifier: text("identifier").notNull(),
+    token: text("token").notNull(),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
+  },
+  (vt) => ({
+    compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
+  })
+);

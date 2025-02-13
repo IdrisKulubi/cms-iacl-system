@@ -3,10 +3,11 @@ import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { eq } from "drizzle-orm";
 import type { NextAuthConfig } from "next-auth";
 import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
 
 import db from "./db/drizzle";
 import { users } from "./db/schema";
+import { verifyPassword } from "./lib/auth-utils";
 
 export const config = {
   pages: {
@@ -19,16 +20,50 @@ export const config = {
   },
   adapter: DrizzleAdapter(db),
   providers: [
-    Google({
-      allowDangerousEmailAccountLinking: true,
-      authorization: {
-        params: {
-          prompt: "select_account",
-          access_type: "offline",
-          response_type: "code",
-        },
+    Credentials({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
       },
-    }),
+      async authorize(credentials) {
+        // Validate company email domain
+        const allowedDomains = process.env.ALLOWED_DOMAINS?.split(",") || [];
+        const emailDomain = credentials.email.split('@')[1];
+        
+        if (!allowedDomains.includes(emailDomain)) {
+          throw new Error("Invalid company email domain");
+        }
+
+        const user = await db.query.users.findFirst({
+          where: eq(users.email, credentials.email),
+        });
+
+        if (!user) {
+          throw new Error("No user found with this email");
+        }
+
+        if (!user.password) {
+          throw new Error("Account not set up properly");
+        }
+
+        const isValid = await verifyPassword(
+          credentials.password,
+          user.password
+        );
+
+        if (!isValid) {
+          throw new Error("Incorrect password");
+        }
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        };
+      }
+    })
   ],
   cookies: {
     sessionToken: {
@@ -43,60 +78,15 @@ export const config = {
   },
   secret: process.env.AUTH_SECRET,
   callbacks: {
-    jwt: async ({ token, user, trigger, session, account }: any) => {
+    jwt: async ({ token, user }) => {
       if (user) {
-        if (account?.provider === "google") {
-          const existingUser = await db.query.users.findFirst({
-            where: (users, { eq }) => eq(users.email, user.email),
-          });
-
-          if (existingUser) {
-            token.role = existingUser.role;
-          } else {
-            // Set default role for new users
-            token.role = "employee";
-
-            const userId = crypto.randomUUID();
-            await db
-              .insert(users)
-              .values({
-                id: userId,
-                name: user.name,
-                email: user.email,
-                image: user.image,
-                role: "employee",
-              })
-              .onConflictDoUpdate({
-                target: users.email,
-                set: {
-                  name: user.name,
-                  image: user.image,
-                },
-              });
-          }
-        } else {
-          token.role = user.role;
-        }
-
-        // Handle users with no name
-        if (user.name === "NO_NAME") {
-          token.name = user.email!.split("@")[0];
-          await db
-            .update(users)
-            .set({ name: token.name })
-            .where(eq(users.id, user.id));
-        }
+        token.role = user.role;
+        token.id = user.id;
       }
-
-      // Handle profile updates
-      if (session?.user.name && trigger === "update") {
-        token.name = session.user.name;
-      }
-
       return token;
     },
-    session: async ({ session, token }: any) => {
-      session.user.id = token.sub;
+    session: async ({ session, token }) => {
+      session.user.id = token.id;
       session.user.role = token.role;
       return session;
     },
